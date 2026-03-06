@@ -215,6 +215,12 @@ public class Timer {
      */
     private <T, U> int doRepeatForIteration(int n, boolean warmup, Supplier<T> supplier, Function<T, U> function, UnaryOperator<T> preFunction, Consumer<U> postFunction, int lastx, int i) {
         // TO BE IMPLEMENTED : note that the timer should be paused when this method is invoked. You may use doPrintStatus to show progress (but optional).
+        T t = supplier.get();
+        if (preFunction != null) t = preFunction.apply(t);
+        resume();
+        U u = function.apply(t);
+        pauseAndLap();
+        if (postFunction != null) postFunction.accept(u);
         // END SOLUTION
         return lastx;
     }
@@ -303,7 +309,7 @@ public class Timer {
      */
     private static long getClock() {
         // TO BE IMPLEMENTED 
-         return 0;
+        return System.nanoTime();
         // END SOLUTION
     }
 
@@ -321,7 +327,7 @@ public class Timer {
      */
     private static double toMillisecs(long ticks) {
         // TO BE IMPLEMENTED 
-         return 0;
+        return ticks / 1000000.0;
         // END SOLUTION
     }
 
