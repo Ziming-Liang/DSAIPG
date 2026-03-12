@@ -23,38 +23,60 @@ public class Main {
     public static void main(String[] args) {
         processArgs(args);
         System.out.println("Degree of parallelism: " + ForkJoinPool.getCommonPoolParallelism());
+        System.out.println("=".repeat(80));
+
         Random random = new Random();
-        int[] array = new int[2000000];
-        Collection<Long> timeList = new ArrayList<>();
-        for (int j = 50; j < 100; j++) {
-            ParSort.cutoff = 10000 * (j + 1);
-            // for (int i = 0; i < array.length; i++) array[i] = random.nextInt(10000000);
-            long time;
-            long startTime = System.currentTimeMillis();
-            for (int t = 0; t < 10; t++) {
-                for (int i = 0; i < array.length; i++) array[i] = random.nextInt(10000000);
-                ParSort.sort(array, 0, array.length);
+
+        int[] arraySizes = {100000, 500000, 1000000, 2000000, 5000000};
+
+        int[] cutoffs = {1000, 5000, 10000, 20000, 50000, 100000, 200000};
+
+        List<String> results = new ArrayList<>();
+
+        for (int arraySize : arraySizes) {
+            System.out.println("\n>>> Testing Array Size: " + arraySize + " <<<");
+            System.out.println("-".repeat(80));
+
+            int[] array = new int[arraySize];
+
+            for (int cutoff : cutoffs) {
+                ParSort.cutoff = cutoff;
+
+                long startTime = System.currentTimeMillis();
+                for (int t = 0; t < 10; t++) {
+                    for (int i = 0; i < array.length; i++) {
+                        array[i] = random.nextInt(10000000);
+                    }
+                    ParSort.sort(array, 0, array.length);
+                }
+                long endTime = System.currentTimeMillis();
+                long time = (endTime - startTime);
+
+                double avgTime = (double) time / 10;
+
+                System.out.println("Cutoff: " + cutoff + "\t\tAvg Time: " + avgTime + " ms");
+
+                results.add(arraySize + "," + cutoff + "," + avgTime);
             }
-            long endTime = System.currentTimeMillis();
-            time = (endTime - startTime);
-            timeList.add(time);
-
-
-            System.out.println("cutoff：" + (ParSort.cutoff) + "\t\t10times Time:" + time + "ms");
-
         }
+
+        System.out.println("\n" + "=".repeat(80));
+        System.out.println("Saving results to result.csv...");
+
         try {
-            FileOutputStream fis = new FileOutputStream("./src/result.csv");
+            FileOutputStream fis = new FileOutputStream("./result.csv");
             OutputStreamWriter isr = new OutputStreamWriter(fis);
             BufferedWriter bw = new BufferedWriter(isr);
-            int j = 0;
-            for (long i : timeList) {
-                String content = (double) 10000 * (j + 1) / 2000000 + "," + (double) i / 10 + "\n";
-                j++;
-                bw.write(content);
-                bw.flush();
+
+            bw.write("ArraySize,Cutoff,AvgTime(ms)\n");
+
+            for (String result : results) {
+                bw.write(result + "\n");
             }
+
             bw.close();
+            System.out.println("Results saved successfully!");
+            System.out.println("Total experiments: " + results.size());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,7 +107,7 @@ public class Main {
      * @return an array of strings containing the elements of the input array excluding the first two.
      */
     private static String[] processArg(String[] xs) {
-        String[] result = new String[0];
+        String[] result = new String[xs.length - 2];
         System.arraycopy(xs, 2, result, 0, xs.length - 2);
         processCommand(xs[0], xs[1]);
         return result;
@@ -103,9 +125,8 @@ public class Main {
     private static void processCommand(String x, String y) {
         if (x.equalsIgnoreCase("N")) setConfig(x, Integer.parseInt(y));
         else
-            // TODO sort this out
-            if (x.equalsIgnoreCase("P")) //noinspection ResultOfMethodCallIgnored
-                ForkJoinPool.getCommonPoolParallelism();
+        if (x.equalsIgnoreCase("P"))
+            ForkJoinPool.getCommonPoolParallelism();
     }
 
     /**
